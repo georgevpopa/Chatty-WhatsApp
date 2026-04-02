@@ -2,27 +2,29 @@ import sys
 import os
 import pkgutil
 
-# --- 1. FIX DLL ȘI PATH (Executat instant) ---
+# --- 1. FIX PATH ȘI DLL (Executat instant) ---
 if getattr(sys, 'frozen', False):
-    # Forțăm path-ul către folderul temporar unde se dezarhivează EXE-ul
+    # Forțăm sistemul să caute bibliotecile în folderul de dezarhivare temporară
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
 # ---------------------------------------------
-
-# --- 2. FIX PYNPUT (Importuri forțate pentru Windows) ---
-# Importăm backend-ul de Win32 direct, ca să obligăm PyInstaller să-l vadă
-try:
-    import pynput.keyboard._win32
-    import pynput.mouse._win32
-except ImportError:
-    pass
-
-import pynput.keyboard as remote_keyboard
-# --------------------------------------------------------
 
 from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
+
+# --- 2. FIX PYNPUT (Import chirurgical pentru Windows) ---
+# Importăm direct din backend-ul de Windows pentru a evita auto-detecția eșuată
+try:
+    from pynput.keyboard._win32 import GlobalHotkeys
+except Exception:
+    try:
+        from pynput.keyboard import GlobalHotkeys
+    except ImportError:
+        # Ultimul efort: import generic dacă restul eșuează
+        import pynput.keyboard as _keyboard
+        GlobalHotkeys = _keyboard.GlobalHotkeys
+# ---------------------------------------------------------
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -81,11 +83,14 @@ class ChattyApp(QMainWindow):
         self.hotkey_sig = HotkeySignal()
         self.hotkey_sig.trigger.connect(self.toggle_window)
         
-        # Folosim clasa GlobalHotkeys din modulul importat mai sus
-        self.kp_listener = remote_keyboard.GlobalHotkeys({
-            '<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit
-        })
-        self.kp_listener.start()
+        # Folosim clasa GlobalHotkeys importată prin logica de mai sus
+        try:
+            self.kp_listener = GlobalHotkeys({
+                '<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit
+            })
+            self.kp_listener.start()
+        except Exception as e:
+            print(f"Eroare Hotkeys: {e}")
 
     def toggle_window(self):
         if self.isVisible() and self.windowState() != Qt.WindowState.WindowMinimized:
