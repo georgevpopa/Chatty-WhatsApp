@@ -34,7 +34,7 @@ Folosește Ctrl + Alt + W pentru a apela rapid chat-ul.
 Dacă dorești să modifici sau să rulezi proiectul din surse, ai nevoie de Python 3.10+.
 
 Structura Proiectului
-Plaintext
+```Plaintext
 📂 Chatty/
 ├── 📂 .github/workflows/   # Automatizarea Build-ului (GitHub Actions)
 ├── 📄 chatty.py            # Codul sursă principal (PyQt6 + keyboard)
