@@ -1,11 +1,13 @@
 import sys
 import os
+import pkgutil  # IMPORT CRITIC: Forțează PyInstaller să includă modulele necesare pentru PyQt6
 from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from pynput import keyboard
 
+# Clasă de legătură pentru comunicarea între Thread-ul de tastatură și Interfața Grafică
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
 
@@ -15,37 +17,51 @@ class ChattyApp(QMainWindow):
         self.setWindowTitle("Chatty - WhatsApp Portable Edition")
         self.resize(1100, 800)
 
-        # Configurare folder portabil pentru date
+        # 1. LOGICA DE CĂI (Portabilitate)
+        # Determinăm unde rulează scriptul sau executabilul
         if getattr(sys, 'frozen', False):
             self.base_path = os.path.dirname(sys.executable)
         else:
             self.base_path = os.path.dirname(os.path.abspath(__file__))
 
-        # Redenumit în chatty_data pentru consistență
+        # Folderul pentru sesiunea de login (Cookies/Cache)
         self.data_path = os.path.join(self.base_path, "chatty_data")
         if not os.path.exists(self.data_path):
             os.makedirs(self.data_path)
 
-        # Configurare Browser Engine
+        # 2. CONFIGURARE BROWSER (WhatsApp Web)
         self.browser = QWebEngineView()
+        
+        # User-Agent modern pentru a evita blocajele WhatsApp
         ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        self.browser.page().profile().setPersistentStoragePath(self.data_path)
-        self.browser.page().profile().setHttpUserAgent(ua)
+        
+        # Aplicăm setările de profil (salvare locală în chatty_data)
+        profile = self.browser.page().profile()
+        profile.setPersistentStoragePath(self.data_path)
+        profile.setHttpUserAgent(ua)
+        
         self.browser.setUrl(QUrl("https://web.whatsapp.com"))
         self.setCentralWidget(self.browser)
 
-        # System Tray & Hotkeys
+        # 3. INITIALIZARE TRAY ȘI HOTKEYS
         self.setup_tray()
         self.setup_hotkeys()
 
     def setup_tray(self):
+        """Configurează iconița de lângă ceas (System Tray)"""
         self.tray_icon = QSystemTrayIcon(self)
-        # Folosește iconița de sistem dacă icon.ico lipsește
-        self.tray_icon.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_DialogNoButton))
         
+        # Încercăm să folosim icon.ico pentru Tray, altfel punem o iconiță de sistem
+        icon_path = os.path.join(self.base_path, "icon.ico")
+        if os.path.exists(icon_path):
+            self.tray_icon.setIcon(QIcon(icon_path))
+        else:
+            self.tray_icon.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_ComputerIcon))
+        
+        # Meniu Click-Dreapta pe Tray
         menu = QMenu()
-        show_action = QAction("Open Chatty (Ctrl+Alt+W)", self)
-        quit_action = QAction("Exit", self)
+        show_action = QAction("Afișează Chatty (Ctrl+Alt+W)", self)
+        quit_action = QAction("Închide de tot (Exit)", self)
         
         show_action.triggered.connect(self.showNormal)
         quit_action.triggered.connect(QApplication.instance().quit)
@@ -56,34 +72,49 @@ class ChattyApp(QMainWindow):
         
         self.tray_icon.setContextMenu(menu)
         self.tray_icon.show()
+        
+        # Click pe iconiță (stânga) pentru toggle rapid
         self.tray_icon.activated.connect(self.on_tray_click)
 
     def setup_hotkeys(self):
+        """Configurează scurtătura globală Ctrl+Alt+W"""
         self.hotkey_sig = HotkeySignal()
         self.hotkey_sig.trigger.connect(self.toggle_window)
-        self.kp_listener = keyboard.GlobalHotkeys({'<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit})
+        
+        # Listener-ul de tastatură rulează pe un fir de execuție separat
+        self.kp_listener = keyboard.GlobalHotkeys({
+            '<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit
+        })
         self.kp_listener.start()
 
     def toggle_window(self):
+        """Arată sau ascunde fereastra în funcție de starea curentă"""
         if self.isVisible() and self.windowState() != Qt.WindowState.WindowMinimized:
             self.hide()
         else:
             self.showNormal()
             self.activateWindow()
+            self.raise_()
 
     def on_tray_click(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self.toggle_window()
 
     def changeEvent(self, event):
+        """Interceptăm minimizarea pentru a ascunde fereastra de pe Taskbar"""
         if event.type() == event.Type.WindowStateChange:
             if self.windowState() & Qt.WindowState.WindowMinimized:
+                # O ascundem complet (rămâne doar în Tray)
                 self.hide()
                 event.ignore()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # Prevenim închiderea aplicației când ascundem fereastra principală
     app.setQuitOnLastWindowClosed(False)
+    
     chatty = ChattyApp()
     chatty.show()
+    
     sys.exit(app.exec())
