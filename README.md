@@ -41,6 +41,7 @@ Structura Proiectului
 ├── 📄 requirements.txt     # Dependențele proiectului
 ├── 🖼️ icon.ico             # Iconița aplicației
 └── 📄 README.md            # Documentația curentă```
+
 Instalare Dependențe
 PowerShell
 pip install -r requirements.txt
