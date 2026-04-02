@@ -64,15 +64,16 @@ Lansare inițială cu PyQt6 WebEngine.
 
 Implementare folder local de date chatty_data.
 
-🛡️ Securitate și Confidențialitate
-Fără Cloud: Chatty nu stochează datele tale pe niciun server propriu. Totul rămâne în folderul tău local.
+## 🛡️ Securitate și Confidențialitate
+* **Fără Cloud:** Chatty nu stochează datele tale pe niciun server propriu. Totul rămâne în folderul tău local.
+* **Open Source:** Poți audita codul sursă oricând.
+* **Notă Sysadmin:** Asigură-te că ai `chatty_data` în `.gitignore` pentru a proteja intimitatea sesiunilor tale!
 
-Open Source: Poți audita codul sursă oricând.
+---
 
-Notă Sysadmin: Asigură-te că adaugi folderul chatty_data în .gitignore pentru a nu urca accidental sesiunea ta de WhatsApp pe GitHub!
+## 👤 Autor
+**George Popa**
+* [GitHub Profile](https://github.com/georgevpopa)
 
-👤 Autor
-George Popa
-
-📄 Licență
-Acest proiect este oferit sub licența MIT. Poți să-l modifici și să-l distribui gratuit.
+## 📄 Licență
+Acest proiect este oferit sub licența **MIT**. Poți să-l modifici și să-l distribui gratuit.
