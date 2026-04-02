@@ -1,0 +1,10 @@
+# Exclude sesiunea de chat și datele private
+chatty_data/
+
+# Exclude mediul virtual și folderele de build
+venv/
+.venv/
+build/
+dist/
+*.spec
+__pycache__/
