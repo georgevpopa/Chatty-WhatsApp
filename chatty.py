@@ -1,30 +1,17 @@
 import sys
 import os
 import pkgutil
+import keyboard  # Schimbare: mult mai stabil pentru EXE-uri portabile
 
-# --- 1. FIX PATH ȘI DLL (Executat instant) ---
+# --- 1. FIX PATH ȘI DLL ---
 if getattr(sys, 'frozen', False):
-    # Forțăm sistemul să caute bibliotecile în folderul de dezarhivare temporară
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
-# ---------------------------------------------
+# --------------------------
 
 from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-
-# --- 2. FIX PYNPUT (Import chirurgical pentru Windows) ---
-# Importăm direct din backend-ul de Windows pentru a evita auto-detecția eșuată
-try:
-    from pynput.keyboard._win32 import GlobalHotkeys
-except Exception:
-    try:
-        from pynput.keyboard import GlobalHotkeys
-    except ImportError:
-        # Ultimul efort: import generic dacă restul eșuează
-        import pynput.keyboard as _keyboard
-        GlobalHotkeys = _keyboard.GlobalHotkeys
-# ---------------------------------------------------------
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -72,25 +59,26 @@ class ChattyApp(QMainWindow):
         quit_action = QAction("Închide de tot (Exit)", self)
         show_action.triggered.connect(self.showNormal)
         quit_action.triggered.connect(QApplication.instance().quit)
+        
         menu.addAction(show_action)
         menu.addSeparator()
         menu.addAction(quit_action)
+        
         self.tray_icon.setContextMenu(menu)
         self.tray_icon.show()
         self.tray_icon.activated.connect(self.on_tray_click)
 
     def setup_hotkeys(self):
+        # Folosim semnalul pentru a face trecerea de la thread-ul de taste la cel de UI
         self.hotkey_sig = HotkeySignal()
         self.hotkey_sig.trigger.connect(self.toggle_window)
         
-        # Folosim clasa GlobalHotkeys importată prin logica de mai sus
+        # Înregistrăm hotkey-ul folosind noua bibliotecă
+        # Scurtătura rămâne aceeași: Ctrl+Alt+W
         try:
-            self.kp_listener = GlobalHotkeys({
-                '<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit
-            })
-            self.kp_listener.start()
+            keyboard.add_hotkey('ctrl+alt+w', self.hotkey_sig.trigger.emit)
         except Exception as e:
-            print(f"Eroare Hotkeys: {e}")
+            print(f"Hotkey Error: {e}")
 
     def toggle_window(self):
         if self.isVisible() and self.windowState() != Qt.WindowState.WindowMinimized:
