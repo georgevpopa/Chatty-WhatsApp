@@ -19,7 +19,7 @@ jobs:
           pip install -r requirements.txt
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile --noconsole --name "Chatty" --icon="icon.ico" --collect-all pynput chatty.py
+          pyinstaller --onefile --noconsole --name "Chatty" --icon="icon.ico" --hidden-import pynput.keyboard._win32 --hidden-import pynput.mouse._win32 --collect-all pynput chatty.py
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:

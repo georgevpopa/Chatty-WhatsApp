@@ -2,23 +2,27 @@ import sys
 import os
 import pkgutil
 
-# --- FIX CRITIC PENTRU DLL-URI (Executat IMEDIAT) ---
+# --- 1. FIX DLL ȘI PATH (Executat instant) ---
 if getattr(sys, 'frozen', False):
+    # Forțăm path-ul către folderul temporar unde se dezarhivează EXE-ul
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ['PATH']
-# ---------------------------------------------------
+# ---------------------------------------------
+
+# --- 2. FIX PYNPUT (Importuri forțate pentru Windows) ---
+# Importăm backend-ul de Win32 direct, ca să obligăm PyInstaller să-l vadă
+try:
+    import pynput.keyboard._win32
+    import pynput.mouse._win32
+except ImportError:
+    pass
+
+import pynput.keyboard as remote_keyboard
+# --------------------------------------------------------
 
 from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-
-# Schimbăm modul de import pentru pynput ca să fim ultra-expliciți
-try:
-    from pynput.keyboard import GlobalHotkeys
-except ImportError:
-    # Fallback în caz că structura internă a pynput este recalcitrantă
-    from pynput.keyboard._win32 import KeyCode
-    from pynput.keyboard import GlobalHotkeys
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -29,7 +33,7 @@ class ChattyApp(QMainWindow):
         self.setWindowTitle("Chatty - WhatsApp Portable Edition")
         self.resize(1100, 800)
 
-        # 1. LOGICA DE PORTABILITATE
+        # LOGICA DE PORTABILITATE
         if getattr(sys, 'frozen', False):
             self.base_path = os.path.dirname(sys.executable)
         else:
@@ -39,7 +43,7 @@ class ChattyApp(QMainWindow):
         if not os.path.exists(self.data_path):
             os.makedirs(self.data_path)
 
-        # 2. CONFIGURARE BROWSER
+        # CONFIGURARE BROWSER
         self.browser = QWebEngineView()
         ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         
@@ -50,7 +54,6 @@ class ChattyApp(QMainWindow):
         self.browser.setUrl(QUrl("https://web.whatsapp.com"))
         self.setCentralWidget(self.browser)
 
-        # 3. INITIALIZARE TRAY ȘI HOTKEYS
         self.setup_tray()
         self.setup_hotkeys()
 
@@ -78,8 +81,8 @@ class ChattyApp(QMainWindow):
         self.hotkey_sig = HotkeySignal()
         self.hotkey_sig.trigger.connect(self.toggle_window)
         
-        # Folosim direct clasa importată mai sus
-        self.kp_listener = GlobalHotkeys({
+        # Folosim clasa GlobalHotkeys din modulul importat mai sus
+        self.kp_listener = remote_keyboard.GlobalHotkeys({
             '<ctrl>+<alt>+w': self.hotkey_sig.trigger.emit
         })
         self.kp_listener.start()
