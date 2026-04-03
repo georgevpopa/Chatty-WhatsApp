@@ -1,40 +1,45 @@
-📱 Chatty - WhatsApp Portable Edition
-
+# 📱 Chatty - WhatsApp Portable Edition
 
 ![Chatty Screenshot](WhatsApp%20Portable%20Edition.png)
 
+---
 
-Versiune Stabilă: v1.1.5 | Status: Producție
+### **Versiune Stabilă:** v1.1.5 | **Status:** Producție stabile 🚀
 
-Chatty este un client WhatsApp Web ultra-ușor, conceput pentru portabilitate și productivitate. Spre deosebire de aplicația oficială, Chatty nu necesită instalare, nu are telemetrie agresivă și oferă control total printr-o scurtătură globală (Hotkey).
+**Chatty** este un client WhatsApp Web ultra-ușor, conceput pentru portabilitate și productivitate. Spre deosebire de aplicația oficială, Chatty nu necesită instalare și oferă control total printr-o scurtătură globală (Hotkey).
 
-✨ Caracteristici Principale
-🚀 Portabilitate Reală: Toate datele sesiunii (cookies, cache) sunt salvate în folderul local chatty_data. Poți lua folderul pe un stick USB și vei rămâne logat pe orice alt PC.
+---
 
-⌨️ Hotkey Global (Ctrl + Alt + W): Ascunde sau afișează fereastra instantaneu, indiferent de aplicația în care te afli.
+## ✨ Caracteristici Principale
 
-🥷 Mod Stealth (System Tray): Aplicația rulează discret lângă ceas. Închiderea ferestrei doar o ascunde în Tray, păstrând conexiunea activă.
+* 🚀 **Portabilitate Reală:** Toate datele sesiunii (cookies, cache) sunt salvate în folderul local `chatty_data`. Poți lua folderul pe un stick USB și vei rămâne logat pe orice alt PC.
 
-📉 Consum Redus de Resurse: Optimizat pentru a ocupa mai puțină memorie RAM decât un tab de browser obișnuit.
+* ⌨️ **Hotkey Global (`Ctrl + Alt + W`):** Ascunde sau afișează fereastra instantaneu, indiferent de aplicația în care te afli.
 
-⚙️ CI/CD Ready: Build-uri automate prin GitHub Actions (fisiere .exe generate la fiecare release).
+* 🥷 **Mod Stealth (System Tray):** Aplicația rulează discret lângă ceas. Închiderea ferestrei doar o ascunde în Tray, păstrând conexiunea activă.
 
-🚀 Cum se utilizează
-Mergi la secțiunea Releases.
+* 📉 **Consum Redus de Resurse:** Optimizat pentru a ocupa mai puțină memorie RAM decât un tab de browser obișnuit.
 
-Descarcă ultima versiune de Chatty.exe.
+---
 
-Rulează aplicația (nu necesită drepturi de Administrator).
+## 🚀 Cum se utilizează
 
-Scanează codul QR cu telefonul o singură dată.
+1.  **Mergi la secțiunea Releases:** Descarcă ultima variantă de `Chatty.exe`.
 
-Folosește Ctrl + Alt + W pentru a apela rapid chat-ul.
+2.  **Lansare:** Rulează aplicația (nu necesită drepturi de Administrator).
 
-🛠️ Detalii Tehnice (Pentru Developeri)
-Dacă dorești să modifici sau să rulezi proiectul din surse, ai nevoie de Python 3.10+.
+3.  **Logare:** Scanează codul QR cu telefonul o singură dată.
 
-Structura Proiectului
-```Plaintext
+4.  **Utilizare:** Folosește **`Ctrl + Alt + W`** pentru a apela rapid chat-ul.
+
+---
+
+## 🛠️ Detalii Tehnice (Pentru Developeri)
+
+Dacă dorești să modifici sau să rulezi proiectul din surse, ai nevoie de **Python 3.10+**.
+
+### 📂 Structura Proiectului
+```plaintext
 📂 Chatty/
 ├── 📂 .github/workflows/   # Automatizarea Build-ului (GitHub Actions)
 ├── 📄 chatty.py            # Codul sursă principal (PyQt6 + keyboard)
@@ -43,14 +48,16 @@ Structura Proiectului
 └── 📄 README.md            # Documentația curentă
 ```
 
-Instalare Dependențe
+⌨️ Instalare Dependențe
+
 PowerShell
 pip install -r requirements.txt
-Compilare Manuală (Local)
-Dacă vrei să generezi propriul executabil:
+
+🔨 Compilare Manuală (Local):
 
 PowerShell
 pyinstaller --onefile --noconsole --name "Chatty" --icon="icon.ico" chatty.py
+
 📝 Jurnal de Modificări (Changelog)
 v1.1.5 (Cea mai recentă)
 Migrare bibliotecă: S-a trecut de la pynput la keyboard pentru o stabilitate sporită în modul portabil.
