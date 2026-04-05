@@ -1,7 +1,6 @@
 import sys
 import os
-import pkgutil
-import keyboard  # Schimbare: mult mai stabil pentru EXE-uri portabile
+import keyboard
 
 # --- 1. FIX PATH ȘI DLL ---
 if getattr(sys, 'frozen', False):
@@ -12,6 +11,7 @@ from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest # Necesar pentru download
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -29,8 +29,11 @@ class ChattyApp(QMainWindow):
             self.base_path = os.path.dirname(os.path.abspath(__file__))
 
         self.data_path = os.path.join(self.base_path, "chatty_data")
-        if not os.path.exists(self.data_path):
-            os.makedirs(self.data_path)
+        self.download_path = os.path.join(self.base_path, "downloads") # Folder nou pentru download
+        
+        for path in [self.data_path, self.download_path]:
+            if not os.path.exists(path):
+                os.makedirs(path)
 
         # CONFIGURARE BROWSER
         self.browser = QWebEngineView()
@@ -40,11 +43,31 @@ class ChattyApp(QMainWindow):
         profile.setPersistentStoragePath(self.data_path)
         profile.setHttpUserAgent(ua)
         
+        # --- FIX DOWNLOAD ---
+        # Conectăm semnalul de download la funcția noastră de procesare
+        profile.downloadRequested.connect(self.on_download_requested)
+        # --------------------
+        
         self.browser.setUrl(QUrl("https://web.whatsapp.com"))
         self.setCentralWidget(self.browser)
 
         self.setup_tray()
         self.setup_hotkeys()
+
+    def on_download_requested(self, download: QWebEngineDownloadRequest):
+        """Gestionează salvarea fișierelor în folderul local 'downloads'"""
+        # Luăm numele sugerat de WhatsApp (ex: imagine.jpg)
+        filename = download.suggestedFileName()
+        
+        # Setăm calea completă de salvare
+        save_path = os.path.join(self.download_path, filename)
+        
+        # Îi spunem browserului unde să-l pună și să înceapă descărcarea
+        download.setDownloadDirectory(self.download_path)
+        download.setDownloadFileName(filename)
+        download.accept()
+        
+        print(f"Descărcare începută: {save_path}")
 
     def setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
@@ -69,12 +92,8 @@ class ChattyApp(QMainWindow):
         self.tray_icon.activated.connect(self.on_tray_click)
 
     def setup_hotkeys(self):
-        # Folosim semnalul pentru a face trecerea de la thread-ul de taste la cel de UI
         self.hotkey_sig = HotkeySignal()
         self.hotkey_sig.trigger.connect(self.toggle_window)
-        
-        # Înregistrăm hotkey-ul folosind noua bibliotecă
-        # Scurtătura rămâne aceeași: Ctrl+Alt+W
         try:
             keyboard.add_hotkey('ctrl+alt+w', self.hotkey_sig.trigger.emit)
         except Exception as e:
