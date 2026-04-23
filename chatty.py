@@ -11,7 +11,7 @@ from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEngineProfile
+from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEngineProfile, QWebEnginePage
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -35,24 +35,23 @@ class ChattyApp(QMainWindow):
             if not os.path.exists(path):
                 os.makedirs(path)
 
-        # 2. CONFIGURARE PROFIL BROWSER (FIX LIMBĂ ȘI SESIUNE)
+        # 2. CONFIGURARE BROWSER
         self.browser = QWebEngineView()
-        profile = self.browser.page().profile()
+        page = self.browser.page()
+        profile = page.profile()
         
-        # Setează calea de stocare
         profile.setPersistentStoragePath(self.data_path)
-        
-        # FIX: Forțăm limba română și engleză (Accept-Language header)
         profile.setHttpAcceptLanguage("ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7")
-        
-        # FIX: Forțăm salvarea cookie-urilor pe disk imediat
         profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
         
-        # User Agent modern pentru a evita suspiciunile WhatsApp
         ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         profile.setHttpUserAgent(ua)
         
-        # Gestionare Download
+        # --- FIX LOCAȚIE ȘI PERMISIUNI ---
+        # Conectăm semnalul de cerere permisiuni la funcția noastră
+        page.featurePermissionRequested.connect(self.handle_feature_permission)
+        # ---------------------------------
+        
         profile.downloadRequested.connect(self.on_download_requested)
         
         self.browser.setUrl(QUrl("https://web.whatsapp.com"))
@@ -60,6 +59,15 @@ class ChattyApp(QMainWindow):
 
         self.setup_tray()
         self.setup_hotkeys()
+
+    def handle_feature_permission(self, url, feature):
+        """Manager de permisiuni pentru Locație, Cameră etc."""
+        if feature == QWebEnginePage.Feature.Geolocation:
+            # Îi dăm voie să vadă unde suntem
+            self.browser.page().setFeaturePermission(
+                url, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser
+            )
+            print(f"Permisiune Geolocation acordată pentru: {url}")
 
     def on_download_requested(self, download: QWebEngineDownloadRequest):
         filename = download.suggestedFileName()
