@@ -11,7 +11,7 @@ from PyQt6.QtCore import QUrl, Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest # Necesar pentru download
+from PyQt6.QtWebEngineCore import QWebEngineDownloadRequest, QWebEngineProfile
 
 class HotkeySignal(QObject):
     trigger = pyqtSignal()
@@ -29,24 +29,31 @@ class ChattyApp(QMainWindow):
             self.base_path = os.path.dirname(os.path.abspath(__file__))
 
         self.data_path = os.path.join(self.base_path, "chatty_data")
-        self.download_path = os.path.join(self.base_path, "downloads") # Folder nou pentru download
+        self.download_path = os.path.join(self.base_path, "downloads")
         
         for path in [self.data_path, self.download_path]:
             if not os.path.exists(path):
                 os.makedirs(path)
 
-        # CONFIGURARE BROWSER
+        # 2. CONFIGURARE PROFIL BROWSER (FIX LIMBĂ ȘI SESIUNE)
         self.browser = QWebEngineView()
-        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        
         profile = self.browser.page().profile()
+        
+        # Setează calea de stocare
         profile.setPersistentStoragePath(self.data_path)
+        
+        # FIX: Forțăm limba română și engleză (Accept-Language header)
+        profile.setHttpAcceptLanguage("ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7")
+        
+        # FIX: Forțăm salvarea cookie-urilor pe disk imediat
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
+        
+        # User Agent modern pentru a evita suspiciunile WhatsApp
+        ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         profile.setHttpUserAgent(ua)
         
-        # --- FIX DOWNLOAD ---
-        # Conectăm semnalul de download la funcția noastră de procesare
+        # Gestionare Download
         profile.downloadRequested.connect(self.on_download_requested)
-        # --------------------
         
         self.browser.setUrl(QUrl("https://web.whatsapp.com"))
         self.setCentralWidget(self.browser)
@@ -55,19 +62,10 @@ class ChattyApp(QMainWindow):
         self.setup_hotkeys()
 
     def on_download_requested(self, download: QWebEngineDownloadRequest):
-        """Gestionează salvarea fișierelor în folderul local 'downloads'"""
-        # Luăm numele sugerat de WhatsApp (ex: imagine.jpg)
         filename = download.suggestedFileName()
-        
-        # Setăm calea completă de salvare
-        save_path = os.path.join(self.download_path, filename)
-        
-        # Îi spunem browserului unde să-l pună și să înceapă descărcarea
         download.setDownloadDirectory(self.download_path)
         download.setDownloadFileName(filename)
         download.accept()
-        
-        print(f"Descărcare începută: {save_path}")
 
     def setup_tray(self):
         self.tray_icon = QSystemTrayIcon(self)
