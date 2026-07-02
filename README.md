@@ -84,3 +84,10 @@ Implementare folder local de date chatty_data.
 
 ## 📄 Licență
 Acest proiect este oferit sub licența **MIT**. Poți să-l modifici și să-l distribui gratuit.
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=georgevpopa/Chatty-WhatsApp&type=Date)](https://star-history.com/#georgevpopa/Chatty-WhatsApp&Date)
+
